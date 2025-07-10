@@ -1,0 +1,88 @@
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+*.log
+*.tmp
+*.cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+build/
+dist/
+coverage/
+
+# Logs
+logs/
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+server.log
+
+# iOS Development
+ios/**/*.xcuserdata/
+ios/**/xcuserdata/
+ios/**/*.xcworkspace/xcuserdata/
+ios/**/*.xcodeproj/xcuserdata/
+ios/**/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/**/build/
+ios/**/DerivedData/
+ios/**/.build/
+ios/**/*.hmap
+ios/**/*.ipa
+ios/**/*.dSYM.zip
+ios/**/*.dSYM
+
+# Xcode
+ios/**/*.pbxuser
+ios/**/*.mode1v3
+ios/**/*.mode2v3
+ios/**/*.perspectivev3
+ios/**/*.xccheckout
+ios/**/*.moved-aside
+ios/**/*.xcuserstate
+ios/**/*.xcscmblueprint
+
+# Swift Package Manager
+ios/**/.swiftpm/
+ios/**/Package.resolved
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Development files
+.env
+server.log
+quiz_app_*.sqlite
+*.pid

@@ -1,0 +1,57 @@
+{
+  "name": "quiz-app-backend",
+  "version": "1.0.0",
+  "description": "Quiz app backend API",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --detectOpenHandles",
+    "test:ci": "jest --ci --coverage --detectOpenHandles",
+    "lint": "echo 'ESLint not configured yet'",
+    "lint:fix": "echo 'ESLint not configured yet'",
+    "migrate": "sequelize-cli db:migrate",
+    "migrate:undo": "sequelize-cli db:migrate:undo",
+    "migrate:undo:all": "sequelize-cli db:migrate:undo:all",
+    "migrate:status": "sequelize-cli db:migrate:status",
+    "seed": "sequelize-cli db:seed:all",
+    "seed:undo": "sequelize-cli db:seed:undo:all",
+    "db:reset": "npm run migrate:undo:all && npm run migrate && npm run seed",
+    "db:setup": "npm run migrate && npm run seed",
+    "health": "curl -f http://localhost:3000/health || echo 'Server not running'",
+    "docker:dev": "docker-compose up -d postgres redis",
+    "docker:stop": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "build": "echo 'No build step needed for Node.js'",
+    "clean": "rm -rf node_modules package-lock.json && npm install"
+  },
+  "keywords": [
+    "quiz",
+    "gaming",
+    "api",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.1.0",
+    "express": "^5.1.0",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "redis": "^5.6.0",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.10",
+    "sequelize-cli": "^6.6.3",
+    "supertest": "^7.1.3"
+  }
+}

@@ -1,0 +1,154 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: [ 'backend/**', '.github/workflows/backend.yml' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'backend/**', '.github/workflows/backend.yml' ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quiz_app_test
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    - name: Run linting
+      working-directory: ./backend
+      run: npm run lint || echo "Linting setup pending"
+    
+    - name: Create test database
+      working-directory: ./backend
+      run: |
+        npm run migrate
+      env:
+        NODE_ENV: test
+        DB_HOST: localhost
+        DB_USERNAME: postgres
+        DB_PASSWORD: postgres
+        DB_NAME_TEST: quiz_app_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-secret-key
+    
+    - name: Run tests
+      working-directory: ./backend
+      run: npm test
+      env:
+        NODE_ENV: test
+        DB_HOST: localhost
+        DB_USERNAME: postgres
+        DB_PASSWORD: postgres
+        DB_NAME_TEST: quiz_app_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-secret-key
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      with:
+        directory: ./backend/coverage
+        flags: backend
+        fail_ci_if_error: false
+
+  security:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    - name: Run security audit
+      working-directory: ./backend
+      run: npm audit --audit-level=moderate
+    
+    - name: Check for known vulnerabilities
+      working-directory: ./backend
+      run: npx audit-ci --moderate
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci --production
+    
+    - name: Build application
+      working-directory: ./backend
+      run: echo "Build step - no build process needed for Node.js"
+    
+    - name: Create deployment artifact
+      working-directory: ./backend
+      run: |
+        tar -czf ../backend-build.tar.gz \
+          --exclude=node_modules \
+          --exclude=tests \
+          --exclude=coverage \
+          --exclude=.env \
+          .
+    
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-build
+        path: backend-build.tar.gz
+        retention-days: 30

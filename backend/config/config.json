@@ -1,0 +1,26 @@
+{
+  "development": {
+    "username": "quiz_user",
+    "password": "quiz_password",
+    "database": "quiz_app_dev",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "quiz_user",
+    "password": "quiz_password",
+    "database": "quiz_app_test",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectUnauthorized": false
+      }
+    }
+  }
+}
