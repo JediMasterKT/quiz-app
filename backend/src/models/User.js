@@ -87,6 +87,17 @@ module.exports = (sequelize, DataTypes) => {
     resetTokenExpires: {
       type: DataTypes.DATE,
       field: 'reset_token_expires'
+    },
+    role: {
+      type: DataTypes.STRING(20),
+      defaultValue: 'user',
+      allowNull: false,
+      validate: {
+        isIn: {
+          args: [['user', 'admin', 'moderator']],
+          msg: 'Role must be user, admin, or moderator'
+        }
+      }
     }
   }, {
     tableName: 'users',
@@ -114,10 +125,23 @@ module.exports = (sequelize, DataTypes) => {
     return jwt.sign({
       id: this.id,
       username: this.username,
-      email: this.email
+      email: this.email,
+      role: this.role
     }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || '7d'
     });
+  };
+
+  User.prototype.isAdmin = function() {
+    return this.role === 'admin';
+  };
+
+  User.prototype.isModerator = function() {
+    return this.role === 'moderator';
+  };
+
+  User.prototype.canManageQuestions = function() {
+    return this.role === 'admin' || this.role === 'moderator';
   };
 
   User.prototype.toJSON = function() {

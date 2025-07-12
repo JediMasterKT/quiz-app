@@ -3,7 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { sequelize } = require('./models');
+const { connectRedis } = require('./config/redis');
 const authRoutes = require('./routes/auth');
+const questionRoutes = require('./routes/questions');
+const gameRoutes = require('./routes/games');
+const categoryRoutes = require('./routes/categories');
+const adminRoutes = require('./routes/admin');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -19,6 +24,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/games', gameRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -47,11 +56,46 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
 
-    // Sync database models (in development)
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync();
-      console.log('Database models synchronized.');
+    // Connect to Redis (optional)
+    await connectRedis();
+
+    // Sync database models (disabled to avoid conflicts)
+    // if (process.env.NODE_ENV === 'development') {
+    //   await sequelize.sync();
+    //   console.log('Database models synchronized.');
+    // }
+
+    // Start cache warming in background
+    if (process.env.NODE_ENV === 'production') {
+      setImmediate(async () => {
+        try {
+          const cacheWarmingService = require('./services/cacheWarmingService');
+          await cacheWarmingService.warmCache();
+        } catch (error) {
+          console.error('Cache warming failed:', error);
+        }
+      });
     }
+
+    // Start background sync service
+    setImmediate(() => {
+      try {
+        const syncService = require('./services/syncService');
+        syncService.startBackgroundSync();
+      } catch (error) {
+        console.error('Background sync startup failed:', error);
+      }
+    });
+
+    // Start storage monitoring
+    setImmediate(() => {
+      try {
+        const storageService = require('./services/storageService');
+        storageService.startStorageMonitoring();
+      } catch (error) {
+        console.error('Storage monitoring startup failed:', error);
+      }
+    });
 
     // Start server
     app.listen(PORT, () => {
