@@ -1,0 +1,93 @@
+groups:
+  - name: api_performance
+    interval: 30s
+    rules:
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time on {{ $labels.instance }}"
+          description: "95th percentile response time is above 500ms (current: {{ $value }}s)"
+
+      - alert: HighErrorRate
+        expr: rate(http_request_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on {{ $labels.instance }}"
+          description: "Error rate is above 5% (current: {{ $value }})"
+
+  - name: database_performance
+    interval: 30s
+    rules:
+      - alert: SlowQueries
+        expr: rate(pg_stat_database_blks_hit{datname="quiz_app_dev"}[5m]) / rate(pg_stat_database_blks_read{datname="quiz_app_dev"}[5m]) < 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low database cache hit ratio"
+          description: "Database cache hit ratio is below 90% (current: {{ $value }})"
+
+      - alert: TooManyConnections
+        expr: pg_stat_database_numbackends{datname="quiz_app_dev"} > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of database connections"
+          description: "Database connections exceed 80 (current: {{ $value }})"
+
+  - name: cache_performance
+    interval: 30s
+    rules:
+      - alert: LowCacheHitRate
+        expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low Redis cache hit rate"
+          description: "Cache hit rate is below 80% (current: {{ $value }})"
+
+      - alert: HighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is above 90% (current: {{ $value }})"
+
+  - name: system_health
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% (current: {{ $value }})"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% (current: {{ $value }})"
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute"
