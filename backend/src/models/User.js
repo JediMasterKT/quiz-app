@@ -87,6 +87,30 @@ module.exports = (sequelize, DataTypes) => {
     resetTokenExpires: {
       type: DataTypes.DATE,
       field: 'reset_token_expires'
+    },
+    totalXp: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'total_xp'
+    },
+    currentLevelXp: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'current_level_xp'
+    },
+    nextLevelXp: {
+      type: DataTypes.INTEGER,
+      defaultValue: 100,
+      field: 'next_level_xp'
+    },
+    levelProgress: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0,
+      field: 'level_progress'
+    },
+    title: {
+      type: DataTypes.STRING(50),
+      defaultValue: 'Novice'
     }
   }, {
     tableName: 'users',
@@ -127,6 +151,29 @@ module.exports = (sequelize, DataTypes) => {
     delete user.resetToken;
     delete user.resetTokenExpires;
     return user;
+  };
+
+  User.associate = function(models) {
+    User.hasMany(models.UserAchievement, {
+      foreignKey: 'user_id',
+      as: 'achievements'
+    });
+    
+    User.hasOne(models.UserStatistics, {
+      foreignKey: 'user_id',
+      as: 'statistics'
+    });
+    
+    User.hasMany(models.LeaderboardEntry, {
+      foreignKey: 'user_id',
+      as: 'leaderboardEntries'
+    });
+    
+    User.belongsToMany(models.Achievement, {
+      through: models.UserAchievement,
+      foreignKey: 'user_id',
+      as: 'earnedAchievements'
+    });
   };
 
   return User;

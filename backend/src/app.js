@@ -2,11 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const http = require('http');
 const { sequelize } = require('./models');
 const authRoutes = require('./routes/auth');
+const progressionRoutes = require('./routes/progression');
+const gameRoutes = require('./routes/game');
 const errorHandler = require('./middleware/errorHandler');
+const socketManager = require('./websocket/socketManager');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
@@ -19,6 +24,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/progression', progressionRoutes);
+app.use('/api/game', gameRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -53,11 +60,15 @@ const startServer = async () => {
       console.log('Database models synchronized.');
     }
 
+    // Initialize WebSocket
+    socketManager.initialize(server);
+
     // Start server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
+      console.log(`WebSocket server initialized`);
     });
   } catch (error) {
     console.error('Unable to start server:', error);
