@@ -21,17 +21,62 @@ class LeaderboardService {
   async initRedis() {
     try {
       this.redisClient = redis.createClient({
-        url: process.env.REDIS_URL || 'redis://localhost:6379'
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+        socket: {
+          reconnectStrategy: (retries) => Math.min(retries * 50, 5000)
+        }
       });
       
       this.redisClient.on('error', (err) => {
         console.error('Redis Client Error:', err);
+        this.redisClient = null;
+      });
+
+      this.redisClient.on('connect', () => {
+        console.log('Redis connected for leaderboard caching');
       });
 
       await this.redisClient.connect();
-      console.log('Redis connected for leaderboard caching');
     } catch (error) {
-      console.error('Failed to connect to Redis:', error);
+      console.error('Failed to connect to Redis, falling back to database:', error);
+      this.redisClient = null;
+    }
+  }
+
+  async getCachedLeaderboard(key) {
+    if (!this.redisClient) return null;
+    
+    try {
+      const cached = await this.redisClient.get(key);
+      return cached ? JSON.parse(cached) : null;
+    } catch (error) {
+      console.error('Redis get error:', error);
+      return null;
+    }
+  }
+
+  async setCachedLeaderboard(key, data, expiry) {
+    if (!this.redisClient) return;
+    
+    try {
+      await this.redisClient.setEx(key, expiry, JSON.stringify(data));
+    } catch (error) {
+      console.error('Redis set error:', error);
+    }
+  }
+
+  async invalidateCache(categoryId = null) {
+    if (!this.redisClient) return;
+    
+    try {
+      const pattern = categoryId ? `leaderboard:*:${categoryId}` : 'leaderboard:*';
+      const keys = await this.redisClient.keys(pattern);
+      
+      if (keys.length > 0) {
+        await this.redisClient.del(keys);
+      }
+    } catch (error) {
+      console.error('Redis cache invalidation error:', error);
     }
   }
 
@@ -158,15 +203,10 @@ class LeaderboardService {
   async getLeaderboard(type, categoryId = null, limit = 100, offset = 0) {
     const cacheKey = `leaderboard:${type}:${categoryId || 'all'}:${limit}:${offset}`;
     
-    if (this.redisClient && this.redisClient.isReady) {
-      try {
-        const cached = await this.redisClient.get(cacheKey);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-      } catch (error) {
-        console.error('Redis get error:', error);
-      }
+    // Try to get from cache first
+    const cached = await this.getCachedLeaderboard(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     const period = this.getPeriodDates(type);
@@ -217,19 +257,27 @@ class LeaderboardService {
       offset
     };
 
-    if (this.redisClient && this.redisClient.isReady) {
-      try {
-        await this.redisClient.setEx(
-          cacheKey,
-          this.cacheExpiry[type],
-          JSON.stringify(leaderboardData)
-        );
-      } catch (error) {
-        console.error('Redis set error:', error);
-      }
-    }
+    // Cache the result
+    await this.setCachedLeaderboard(cacheKey, leaderboardData, this.cacheExpiry[type]);
 
     return leaderboardData;
+  }
+
+  async getUserAllRanks(userId) {
+    const ranks = {};
+    
+    for (const type of this.leaderboardTypes) {
+      const rank = await this.getUserRank(userId, type);
+      ranks[type] = rank || { rank: null, score: 0, totalEntries: 0 };
+    }
+    
+    return {
+      globalRank: ranks.all_time?.rank,
+      weeklyRank: ranks.weekly?.rank,
+      monthlyRank: ranks.monthly?.rank,
+      dailyRank: ranks.daily?.rank,
+      ranks
+    };
   }
 
   async getUserRank(userId, type, categoryId = null) {

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const { sequelize } = require('./models');
@@ -9,18 +10,24 @@ const questionRoutes = require('./routes/questions');
 const gameRoutes = require('./routes/games');
 const categoryRoutes = require('./routes/categories');
 const adminRoutes = require('./routes/admin');
+const progressionRoutes = require('./routes/progression');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for test interface
+}));
 app.use(cors());
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve test interface
+app.use('/test', express.static('public'));
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -28,9 +35,10 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/progression', progressionRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ 
     success: true, 
     message: 'Quiz App API is running',

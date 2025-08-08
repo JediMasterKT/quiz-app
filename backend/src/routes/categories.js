@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const questionService = require('../services/questionService');
+const questionService = require('../services/simpleQuestionService');
 const { authenticateToken } = require('../middleware/auth');
 
 /**
@@ -17,10 +17,7 @@ router.get('/',
       res.status(200).json({
         success: true,
         message: 'Categories retrieved successfully',
-        data: {
-          categories,
-          count: categories.length
-        }
+        data: categories
       });
     } catch (error) {
       console.error('Error fetching categories:', error);

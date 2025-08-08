@@ -30,7 +30,13 @@ const registerValidation = [
 ];
 
 const loginValidation = [
+  body('username')
+    .optional()
+    .notEmpty()
+    .withMessage('Username cannot be empty'),
+  
   body('email')
+    .optional()
     .isEmail()
     .withMessage('Please provide a valid email')
     .normalizeEmail(),

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App - Test Interface</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            background: #48bb78;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f56565;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #4299e1;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stat {
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+        }
+        .question-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .options {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .option {
+            padding: 12px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .option.selected {
+            border-color: #667eea;
+            background: #e9f2ff;
+        }
+        .option.correct {
+            border-color: #48bb78;
+            background: #e6fffa;
+        }
+        .option.incorrect {
+            border-color: #f56565;
+            background: #fff5f5;
+        }
+        #eventLog {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event-item {
+            padding: 4px;
+            margin: 2px 0;
+            background: white;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Quiz App Test Interface</h1>
+        
+        <div class="grid">
+            <!-- Authentication Card -->
+            <div class="card">
+                <h2>🔐 Authentication</h2>
+                <div id="authForm">
+                    <input type="text" id="username" placeholder="Username">
+                    <input type="email" id="email" placeholder="Email">
+                    <input type="password" id="password" placeholder="Password">
+                    <small style="color: #718096; display: block; margin: 5px 0;">
+                        Password must be at least 8 characters with uppercase, lowercase, and a number
+                    </small>
+                    <button onclick="register()">Register</button>
+                    <button onclick="login()">Login</button>
+                </div>
+                <div id="userInfo" class="hidden">
+                    <div class="success">Logged in as: <span id="currentUser"></span></div>
+                    <button onclick="logout()">Logout</button>
+                </div>
+                <div id="authMessage"></div>
+            </div>
+
+            <!-- User Stats Card -->
+            <div class="card hidden" id="statsCard">
+                <h2>📊 Your Stats</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="userLevel">1</div>
+                        <div class="stat-label">Level</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="userXP">0</div>
+                        <div class="stat-label">Total XP</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="gamesPlayed">0</div>
+                        <div class="stat-label">Games Played</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="accuracy">0%</div>
+                        <div class="stat-label">Accuracy</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="levelProgress" style="width: 0%"></div>
+                </div>
+                <small>Progress to next level</small>
+            </div>
+
+            <!-- Quiz Game Card -->
+            <div class="card hidden" id="gameCard">
+                <h2>🎯 Quiz Game</h2>
+                <div id="gameSetup">
+                    <select id="category">
+                        <option value="1">General Knowledge</option>
+                        <option value="2">Science</option>
+                        <option value="3">History</option>
+                        <option value="4">Geography</option>
+                        <option value="5">Entertainment</option>
+                    </select>
+                    <select id="difficulty">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                    <button onclick="startQuiz()">Start Quiz</button>
+                </div>
+                <div id="gamePlay" class="hidden">
+                    <div class="question-card">
+                        <h3>Question <span id="questionNumber">1</span> of 10</h3>
+                        <p id="questionText">Loading question...</p>
+                        <div class="options" id="options"></div>
+                    </div>
+                    <button id="submitAnswer" onclick="submitAnswer()" disabled>Submit Answer</button>
+                    <button id="nextQuestion" onclick="nextQuestion()" class="hidden">Next Question</button>
+                </div>
+                <div id="gameResults" class="hidden">
+                    <h3>Quiz Complete!</h3>
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="stat-value" id="finalScore">0</div>
+                            <div class="stat-label">Score</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="earnedXP">0</div>
+                            <div class="stat-label">XP Earned</div>
+                        </div>
+                    </div>
+                    <button onclick="resetGame()">Play Again</button>
+                </div>
+            </div>
+
+            <!-- WebSocket Events Card -->
+            <div class="card hidden" id="eventsCard">
+                <h2>🔔 Real-time Events</h2>
+                <button onclick="connectWebSocket()">Connect WebSocket</button>
+                <div id="socketStatus" class="info">Not connected</div>
+                <div id="eventLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let authToken = localStorage.getItem('authToken');
+        let currentQuestionIndex = 0;
+        let selectedAnswer = null;
+        let score = 0;
+        let questions = [];
+        let socket = null;
+
+        // Check if already logged in
+        if (authToken) {
+            checkAuth();
+        }
+
+        async function register() {
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('authMessage', 'Registration successful! Please login.', 'success');
+                } else {
+                    // Show specific validation errors if available
+                    let errorMsg = data.message || 'Registration failed';
+                    if (data.errors && data.errors.length > 0) {
+                        errorMsg = data.errors.map(err => err.msg).join('. ');
+                    }
+                    showMessage('authMessage', errorMsg, 'error');
+                }
+            } catch (error) {
+                showMessage('authMessage', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    authToken = data.data.token;
+                    localStorage.setItem('authToken', authToken);
+                    showLoggedIn(data.data.user);
+                    loadUserStats();
+                } else {
+                    showMessage('authMessage', data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showMessage('authMessage', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showLoggedIn(data.data);
+                    loadUserStats();
+                } else {
+                    logout();
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                logout();
+            }
+        }
+
+        function showLoggedIn(user) {
+            document.getElementById('authForm').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('currentUser').textContent = user.username;
+            document.getElementById('statsCard').classList.remove('hidden');
+            document.getElementById('gameCard').classList.remove('hidden');
+            document.getElementById('eventsCard').classList.remove('hidden');
+        }
+
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            document.getElementById('authForm').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            document.getElementById('statsCard').classList.add('hidden');
+            document.getElementById('gameCard').classList.add('hidden');
+            document.getElementById('eventsCard').classList.add('hidden');
+            if (socket) {
+                socket.disconnect();
+            }
+        }
+
+        async function loadUserStats() {
+            try {
+                const response = await fetch(`${API_BASE}/progression/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                const data = await response.json();
+                if (data.success && data.data) {
+                    const user = data.data.user;
+                    document.getElementById('userLevel').textContent = user.level || 1;
+                    document.getElementById('userXP').textContent = user.totalXp || 0;
+                    
+                    if (data.data.statistics) {
+                        const stats = data.data.statistics;
+                        document.getElementById('gamesPlayed').textContent = stats.gamesPlayed || 0;
+                        const accuracy = stats.questionsAnswered > 0 
+                            ? Math.round((stats.correctAnswers / stats.questionsAnswered) * 100)
+                            : 0;
+                        document.getElementById('accuracy').textContent = accuracy + '%';
+                    }
+                    
+                    const progress = user.levelProgress || 0;
+                    document.getElementById('levelProgress').style.width = (progress * 100) + '%';
+                }
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        async function startQuiz() {
+            const category = document.getElementById('category').value;
+            const difficulty = document.getElementById('difficulty').value;
+
+            // For testing, we'll use mock questions since the Question model might not be fully set up
+            questions = generateMockQuestions();
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedAnswer = null;
+
+            document.getElementById('gameSetup').classList.add('hidden');
+            document.getElementById('gamePlay').classList.remove('hidden');
+            displayQuestion();
+        }
+
+        function generateMockQuestions() {
+            return Array.from({ length: 10 }, (_, i) => ({
+                id: i + 1,
+                text: `Sample Question ${i + 1}: What is the answer to this question?`,
+                options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                correctAnswer: Math.floor(Math.random() * 4)
+            }));
+        }
+
+        function displayQuestion() {
+            const question = questions[currentQuestionIndex];
+            document.getElementById('questionNumber').textContent = currentQuestionIndex + 1;
+            document.getElementById('questionText').textContent = question.text;
+            
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.textContent = option;
+                optionDiv.onclick = () => selectAnswer(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            document.getElementById('submitAnswer').disabled = true;
+            document.getElementById('nextQuestion').classList.add('hidden');
+            selectedAnswer = null;
+        }
+
+        function selectAnswer(index) {
+            selectedAnswer = index;
+            document.querySelectorAll('.option').forEach((opt, i) => {
+                opt.classList.toggle('selected', i === index);
+            });
+            document.getElementById('submitAnswer').disabled = false;
+        }
+
+        function submitAnswer() {
+            const question = questions[currentQuestionIndex];
+            const isCorrect = selectedAnswer === question.correctAnswer;
+            
+            if (isCorrect) {
+                score++;
+            }
+            
+            document.querySelectorAll('.option').forEach((opt, i) => {
+                if (i === question.correctAnswer) {
+                    opt.classList.add('correct');
+                } else if (i === selectedAnswer && !isCorrect) {
+                    opt.classList.add('incorrect');
+                }
+            });
+            
+            document.getElementById('submitAnswer').classList.add('hidden');
+            document.getElementById('nextQuestion').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+                document.getElementById('submitAnswer').classList.remove('hidden');
+            } else {
+                endQuiz();
+            }
+        }
+
+        async function endQuiz() {
+            const xpEarned = score * 10;
+            
+            document.getElementById('gamePlay').classList.add('hidden');
+            document.getElementById('gameResults').classList.remove('hidden');
+            document.getElementById('finalScore').textContent = score + '/10';
+            document.getElementById('earnedXP').textContent = xpEarned;
+            
+            // Report results to backend
+            if (authToken) {
+                try {
+                    await fetch(`${API_BASE}/progression/add-xp`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ earnedXP: xpEarned })
+                    });
+                    loadUserStats();
+                } catch (error) {
+                    console.error('Failed to update XP:', error);
+                }
+            }
+        }
+
+        function resetGame() {
+            document.getElementById('gameResults').classList.add('hidden');
+            document.getElementById('gameSetup').classList.remove('hidden');
+        }
+
+        function connectWebSocket() {
+            if (!authToken) {
+                showMessage('socketStatus', 'Please login first', 'error');
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.socket.io/4.5.0/socket.io.min.js';
+            script.onload = () => {
+                socket = io('http://localhost:3000', {
+                    auth: { token: authToken }
+                });
+
+                socket.on('connect', () => {
+                    document.getElementById('socketStatus').textContent = 'Connected';
+                    document.getElementById('socketStatus').className = 'success';
+                    addEvent('Connected to server');
+                });
+
+                socket.on('disconnect', () => {
+                    document.getElementById('socketStatus').textContent = 'Disconnected';
+                    document.getElementById('socketStatus').className = 'error';
+                    addEvent('Disconnected from server');
+                });
+
+                socket.on('progression:update', (data) => {
+                    addEvent(`XP Update: +${data.earnedXP} XP`);
+                    loadUserStats();
+                });
+
+                socket.on('progression:levelup', (data) => {
+                    addEvent(`LEVEL UP! Now level ${data.level}`);
+                });
+
+                socket.on('achievement:unlocked', (data) => {
+                    addEvent(`Achievement: ${data.name}`);
+                });
+            };
+            document.head.appendChild(script);
+        }
+
+        function addEvent(message) {
+            const log = document.getElementById('eventLog');
+            const event = document.createElement('div');
+            event.className = 'event-item';
+            event.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.insertBefore(event, log.firstChild);
+            if (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.className = type;
+            element.textContent = message;
+            setTimeout(() => {
+                element.textContent = '';
+                element.className = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

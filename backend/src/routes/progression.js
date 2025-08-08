@@ -1,11 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const progressionController = require('../controllers/progressionController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authenticateToken } = require('../middleware/auth');
 
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 router.get('/me', progressionController.getUserProgression);
+
+router.post('/calculate-xp', progressionController.calculateXP);
+
+router.post('/add-xp', progressionController.addXP);
+
+router.post('/update-stats', progressionController.updateStats);
 
 router.get('/achievements', progressionController.getUserAchievements);
 

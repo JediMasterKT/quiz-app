@@ -1,6 +1,6 @@
 'use strict';
 
-const progressionService = require('../services/ProgressionService');
+const progressionService = require('../services/SimpleProgressionService');
 const achievementService = require('../services/AchievementService');
 const leaderboardService = require('../services/LeaderboardService');
 
@@ -19,6 +19,61 @@ const progressionController = {
     }
   },
 
+  async calculateXP(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const gameData = req.body;
+      
+      const earnedXP = await progressionService.calculateXP(userId, gameData);
+      
+      res.json({
+        success: true,
+        data: { earnedXP }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async addXP(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { earnedXP } = req.body;
+      
+      if (!earnedXP || earnedXP < 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid XP amount'
+        });
+      }
+      
+      const progressionData = await progressionService.updateUserProgression(userId, earnedXP);
+      
+      res.json({
+        success: true,
+        data: progressionData
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateStats(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const gameData = req.body;
+      
+      const stats = await progressionService.updateGameStatistics(userId, gameData);
+      
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getUserAchievements(req, res, next) {
     try {
       const userId = req.user.id;
@@ -27,6 +82,22 @@ const progressionController = {
       res.json({
         success: true,
         data: achievements
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async checkAchievements(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { gameData } = req.body;
+      
+      const newAchievements = await achievementService.checkAndGrantAchievements(userId, gameData);
+      
+      res.json({
+        success: true,
+        data: { newAchievements }
       });
     } catch (error) {
       next(error);

@@ -101,6 +101,17 @@ module.exports = (sequelize) => {
         }
       }
     },
+    xpEarned: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'xp_earned',
+      validate: {
+        min: {
+          args: [0],
+          msg: 'XP earned cannot be negative'
+        }
+      }
+    },
     correctAnswers: {
       type: DataTypes.INTEGER,
       field: 'correct_answers',

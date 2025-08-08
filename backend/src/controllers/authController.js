@@ -72,10 +72,19 @@ class AuthController {
         });
       }
 
-      const { email, password } = req.body;
+      const { email, username, password } = req.body;
 
-      // Find user
-      const user = await User.findOne({ where: { email } });
+      // Ensure at least one identifier is provided
+      if (!email && !username) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide email or username'
+        });
+      }
+
+      // Find user by email or username
+      const whereClause = email ? { email } : { username };
+      const user = await User.findOne({ where: whereClause });
       if (!user) {
         return res.status(401).json({
           success: false,
@@ -205,7 +214,7 @@ class AuthController {
       
       res.json({
         success: true,
-        data: { user: user.toJSON() }
+        data: user.toJSON()
       });
     } catch (error) {
       console.error('Get profile error:', error);

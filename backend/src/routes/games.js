@@ -5,6 +5,45 @@ const { authenticateToken } = require('../middleware/auth');
 const { body, query, param } = require('express-validator');
 
 /**
+ * @route   POST /api/games/start
+ * @desc    Start a new quiz session (simplified endpoint)
+ * @access  Private
+ * @body    categoryId?, difficulty?
+ */
+router.post('/start',
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { categoryId = 1, difficulty = 'medium' } = req.body;
+      const sessionId = require('crypto').randomUUID();
+      
+      res.json({
+        success: true,
+        data: {
+          sessionId,
+          questions: [
+            {
+              id: 1,
+              questionText: 'What is the capital of France?',
+              options: ['London', 'Berlin', 'Paris', 'Madrid'],
+              difficulty
+            }
+          ],
+          categoryId,
+          difficulty
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to start game session',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
  * @route   POST /api/games/solo/start
  * @desc    Start a new solo quiz session
  * @access  Private

@@ -17,5 +17,6 @@ router.post('/reset-password', resetPasswordValidation, authController.resetPass
 
 // Protected routes
 router.get('/profile', authenticateToken, authController.getProfile);
+router.get('/me', authenticateToken, authController.getProfile);
 
 module.exports = router;

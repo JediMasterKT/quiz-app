@@ -226,6 +226,20 @@ class AchievementService {
     return Math.min(userStats.currentStreak, daysSinceWeekStart + 1);
   }
 
+  async checkAndGrantAchievements(userId, gameData) {
+    const context = {
+      gameScore: gameData.baseScore,
+      userLevel: gameData.userLevel,
+      perfectGame: gameData.perfectGame,
+      questionsCorrect: gameData.questionsCorrect,
+      totalQuestions: gameData.totalQuestions,
+      ...gameData
+    };
+
+    const newAchievements = await this.checkAchievements(userId, context);
+    return newAchievements;
+  }
+
   async getUserAchievements(userId) {
     const achievements = await Achievement.findAll({
       where: { isActive: true },

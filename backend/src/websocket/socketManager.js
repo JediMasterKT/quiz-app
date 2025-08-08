@@ -55,12 +55,39 @@ class SocketManager {
 
     socket.join(`user:${socket.userId}`);
 
-    socket.on('join:leaderboard', (leaderboardType) => {
-      socket.join(`leaderboard:${leaderboardType}`);
+    socket.on('join:leaderboard', (data) => {
+      const { type, categoryId } = data;
+      const room = categoryId ? `leaderboard:${type}:${categoryId}` : `leaderboard:${type}`;
+      socket.join(room);
+      socket.emit('leaderboard:joined', { room, type, categoryId });
     });
 
-    socket.on('leave:leaderboard', (leaderboardType) => {
-      socket.leave(`leaderboard:${leaderboardType}`);
+    socket.on('leave:leaderboard', (data) => {
+      const { type, categoryId } = data;
+      const room = categoryId ? `leaderboard:${type}:${categoryId}` : `leaderboard:${type}`;
+      socket.leave(room);
+    });
+
+    socket.on('leaderboard:subscribe', async (data) => {
+      const { type, categoryId, limit = 100 } = data;
+      const room = categoryId ? `leaderboard:${type}:${categoryId}` : `leaderboard:${type}`;
+      socket.join(room);
+      
+      const leaderboardService = require('../services/LeaderboardService');
+      const leaderboard = await leaderboardService.getLeaderboard(type, categoryId, limit, 0);
+      
+      socket.emit('leaderboard:initial', {
+        type,
+        categoryId,
+        data: leaderboard
+      });
+    });
+
+    socket.on('rank:subscribe', async () => {
+      const leaderboardService = require('../services/LeaderboardService');
+      const ranks = await leaderboardService.getUserAllRanks(socket.userId);
+      
+      socket.emit('rank:update', ranks);
     });
 
     socket.on('disconnect', () => {
@@ -104,12 +131,52 @@ class SocketManager {
     });
   }
 
-  emitLeaderboardUpdate(leaderboardType, data) {
-    const room = `leaderboard:${leaderboardType}`;
+  emitLeaderboardUpdate(leaderboardType, data, categoryId = null) {
+    const room = categoryId ? `leaderboard:${leaderboardType}:${categoryId}` : `leaderboard:${leaderboardType}`;
     if (this.io) {
       this.io.to(room).emit('leaderboard:update', {
         type: leaderboardType,
+        categoryId,
         data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  async updateLeaderboardAfterGame(userId, gameData) {
+    const leaderboardService = require('../services/LeaderboardService');
+    
+    const types = ['daily', 'weekly', 'monthly', 'all_time'];
+    for (const type of types) {
+      const updatedLeaderboard = await leaderboardService.getLeaderboard(type, gameData.categoryId, 100, 0);
+      
+      this.emitLeaderboardUpdate(type, updatedLeaderboard);
+      
+      if (gameData.categoryId) {
+        this.emitLeaderboardUpdate(type, updatedLeaderboard, gameData.categoryId);
+      }
+    }
+    
+    const userRanks = await leaderboardService.getUserAllRanks(userId);
+    this.emitToUser(userId, 'rank:update', userRanks);
+  }
+
+  emitRankChange(userId, oldRank, newRank, leaderboardType) {
+    const improved = newRank < oldRank;
+    
+    this.emitToUser(userId, 'rank:changed', {
+      type: leaderboardType,
+      oldRank,
+      newRank,
+      improved,
+      timestamp: new Date().toISOString()
+    });
+
+    if (improved && newRank <= 10) {
+      this.io.emit('global:topten', {
+        userId,
+        rank: newRank,
+        type: leaderboardType,
         timestamp: new Date().toISOString()
       });
     }
