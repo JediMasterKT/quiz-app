@@ -47,6 +47,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       defaultValue: 1
     },
+    totalXp: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'total_xp'
+    },
+    currentXp: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'current_xp'
+    },
     totalScore: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
@@ -151,6 +161,15 @@ module.exports = (sequelize, DataTypes) => {
     delete user.resetToken;
     delete user.resetTokenExpires;
     return user;
+  };
+
+  User.associate = function(models) {
+    User.belongsToMany(models.Achievement, {
+      through: 'user_achievements',
+      foreignKey: 'user_id',
+      otherKey: 'achievement_id',
+      as: 'achievements'
+    });
   };
 
   return User;

@@ -7,60 +7,53 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-    code: {
-      type: DataTypes.STRING(50),
-      unique: true,
-      allowNull: false
-    },
     name: {
       type: DataTypes.STRING(100),
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: false
+      allowNull: true
     },
     icon: {
       type: DataTypes.STRING(50),
-      allowNull: false
-    },
-    category: {
-      type: DataTypes.ENUM('gameplay', 'progression', 'streak', 'social', 'special'),
-      allowNull: false
-    },
-    rarity: {
-      type: DataTypes.ENUM('common', 'rare', 'epic', 'legendary'),
-      allowNull: false,
-      defaultValue: 'common'
+      allowNull: true
     },
     xpReward: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
       field: 'xp_reward'
     },
-    criteria: {
+    rarity: {
+      type: DataTypes.ENUM('common', 'rare', 'epic', 'legendary'),
+      defaultValue: 'common'
+    },
+    category: {
+      type: DataTypes.STRING(50),
+      defaultValue: 'general'
+    },
+    requirement: {
       type: DataTypes.JSONB,
-      allowNull: false
+      allowNull: true,
+      comment: 'JSON object defining the achievement criteria'
     },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
       field: 'is_active'
-    },
-    displayOrder: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-      field: 'display_order'
     }
   }, {
     tableName: 'achievements',
-    underscored: true
+    underscored: true,
+    timestamps: true
   });
 
   Achievement.associate = function(models) {
     Achievement.belongsToMany(models.User, {
-      through: models.UserAchievement,
+      through: 'user_achievements',
       foreignKey: 'achievement_id',
+      otherKey: 'user_id',
       as: 'users'
     });
   };

@@ -27,25 +27,24 @@ module.exports = (sequelize, DataTypes) => {
     },
     earnedAt: {
       type: DataTypes.DATE,
+      allowNull: false,
       defaultValue: DataTypes.NOW,
       field: 'earned_at'
     },
     progress: {
       type: DataTypes.INTEGER,
-      defaultValue: 0
+      defaultValue: 0,
+      comment: 'Progress towards achievement (for progressive achievements)'
     },
-    progressData: {
+    metadata: {
       type: DataTypes.JSONB,
-      defaultValue: {},
-      field: 'progress_data'
-    },
-    notified: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false
+      allowNull: true,
+      comment: 'Additional data about how achievement was earned'
     }
   }, {
     tableName: 'user_achievements',
     underscored: true,
+    timestamps: true,
     indexes: [
       {
         unique: true,

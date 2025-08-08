@@ -1,7 +1,12 @@
 'use strict';
 
-const progressionService = require('../services/SimpleProgressionService');
-const achievementService = require('../services/AchievementService');
+// Use database service if available, fallback to simple service
+const progressionService = process.env.USE_SIMPLE_PROGRESSION === 'true' 
+  ? require('../services/SimpleProgressionService')
+  : require('../services/DatabaseProgressionService');
+const achievementService = process.env.USE_SIMPLE_ACHIEVEMENTS === 'true'
+  ? require('../services/AchievementService')
+  : require('../services/DatabaseAchievementService');
 const leaderboardService = require('../services/LeaderboardService');
 
 const progressionController = {
@@ -93,6 +98,8 @@ const progressionController = {
       const userId = req.user.id;
       const { gameData } = req.body;
       
+      console.log('Achievement service:', typeof achievementService.checkAndGrantAchievements);
+      
       const newAchievements = await achievementService.checkAndGrantAchievements(userId, gameData);
       
       res.json({
@@ -100,6 +107,7 @@ const progressionController = {
         data: { newAchievements }
       });
     } catch (error) {
+      console.error('Check achievements error:', error);
       next(error);
     }
   },
@@ -186,7 +194,7 @@ const progressionController = {
     }
   },
 
-  async checkAchievements(req, res, next) {
+  async checkAchievementsOld(req, res, next) {
     try {
       const userId = req.user.id;
       const { context = {} } = req.body;
