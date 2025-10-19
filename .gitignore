@@ -85,4 +85,7 @@ Thumbs.db
 .env
 server.log
 quiz_app_*.sqlite
-*.pid
+*.pid.claude/
+
+# Starforge
+.claude/*
