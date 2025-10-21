@@ -3,17 +3,20 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    // Remove primary key constraint before changing column type
+    // Remove primary key constraint before modifying column
     await queryInterface.removeConstraint('game_sessions', 'game_sessions_pkey');
 
-    // Change id to UUID
-    await queryInterface.changeColumn('game_sessions', 'id', {
+    // Drop the INTEGER id column entirely (cannot cast INTEGER to UUID)
+    await queryInterface.removeColumn('game_sessions', 'id');
+
+    // Add new id column with UUID type and default value
+    await queryInterface.addColumn('game_sessions', 'id', {
       type: Sequelize.UUID,
-      primaryKey: true,
-      defaultValue: Sequelize.UUIDV4
+      defaultValue: Sequelize.literal('gen_random_uuid()'),
+      allowNull: false
     });
 
-    // Re-add primary key constraint after changing column type
+    // Re-add primary key constraint with UUID column
     await queryInterface.addConstraint('game_sessions', {
       fields: ['id'],
       type: 'primary key',
@@ -97,16 +100,20 @@ module.exports = {
     await queryInterface.removeColumn('game_sessions', 'time_per_question');
     await queryInterface.removeColumn('game_sessions', 'total_time_spent');
 
-    // Remove primary key constraint before changing column type
+    // Remove primary key constraint before modifying column
     await queryInterface.removeConstraint('game_sessions', 'game_sessions_pkey');
 
-    await queryInterface.changeColumn('game_sessions', 'id', {
+    // Drop UUID id column
+    await queryInterface.removeColumn('game_sessions', 'id');
+
+    // Re-add INTEGER id column with auto-increment
+    await queryInterface.addColumn('game_sessions', 'id', {
       type: Sequelize.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+      autoIncrement: true,
+      allowNull: false
     });
 
-    // Re-add primary key constraint after changing column type
+    // Re-add primary key constraint with INTEGER column
     await queryInterface.addConstraint('game_sessions', {
       fields: ['id'],
       type: 'primary key',
