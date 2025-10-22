@@ -5,9 +5,9 @@ module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.createTable('game_sessions', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         primaryKey: true,
-        autoIncrement: true
+        defaultValue: Sequelize.literal('gen_random_uuid()')
       },
       user_id: {
         type: Sequelize.INTEGER,
@@ -21,6 +21,11 @@ module.exports = {
       session_type: {
         type: Sequelize.STRING(20),
         allowNull: false
+      },
+      status: {
+        type: Sequelize.STRING(20),
+        allowNull: false,
+        defaultValue: 'active'
       },
       category_id: {
         type: Sequelize.INTEGER,
@@ -37,7 +42,11 @@ module.exports = {
       total_questions: {
         type: Sequelize.INTEGER
       },
-      questions_answered: {
+      current_question_index: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0
+      },
+      score: {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
@@ -45,11 +54,23 @@ module.exports = {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
-      total_score: {
+      incorrect_answers: {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
-      time_taken: {
+      question_ids: {
+        type: Sequelize.JSONB,
+        defaultValue: []
+      },
+      answers: {
+        type: Sequelize.JSONB,
+        defaultValue: []
+      },
+      time_per_question: {
+        type: Sequelize.JSONB,
+        defaultValue: []
+      },
+      total_time_spent: {
         type: Sequelize.INTEGER
       },
       started_at: {
@@ -58,10 +79,6 @@ module.exports = {
       },
       completed_at: {
         type: Sequelize.DATE
-      },
-      is_completed: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false
       },
       session_data: {
         type: Sequelize.JSONB
@@ -79,7 +96,9 @@ module.exports = {
     // Add indexes
     await queryInterface.addIndex('game_sessions', ['user_id']);
     await queryInterface.addIndex('game_sessions', ['session_type']);
-    await queryInterface.addIndex('game_sessions', ['is_completed']);
+    await queryInterface.addIndex('game_sessions', ['status']);
+    await queryInterface.addIndex('game_sessions', ['started_at']);
+    await queryInterface.addIndex('game_sessions', ['user_id', 'status']);
   },
 
   async down (queryInterface, Sequelize) {
