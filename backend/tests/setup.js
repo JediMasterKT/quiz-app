@@ -12,4 +12,13 @@ beforeAll(async () => {
 
 afterAll(async () => {
   console.log('Tearing down test environment...');
+
+  // Critical: Stop all background sync processes to prevent:
+  // - Database connections from being used after sequelize.close()
+  // - "Cannot log after tests are done" warnings
+  // - Test suite hangs due to active timers
+  const syncService = require('../src/services/syncService');
+  await syncService.shutdown();
+
+  console.log('All background services stopped');
 });

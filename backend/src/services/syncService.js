@@ -8,19 +8,29 @@ class SyncService {
     this.lastSyncTime = null;
     this.syncInterval = 5 * 60 * 1000; // 5 minutes
     this.conflictResolutions = [];
+    this.backgroundTimer = null; // Store interval reference for cleanup
+    this.initialTimer = null; // Store timeout reference for cleanup
   }
 
   /**
    * Start background sync process
    */
   startBackgroundSync() {
+    // Clear any existing timers first to prevent duplicates
+    if (this.backgroundTimer) {
+      clearInterval(this.backgroundTimer);
+    }
+    if (this.initialTimer) {
+      clearTimeout(this.initialTimer);
+    }
+
     // Initial sync after 30 seconds
-    setTimeout(() => {
+    this.initialTimer = setTimeout(() => {
       this.performSync();
     }, 30000);
 
     // Set up recurring sync
-    setInterval(() => {
+    this.backgroundTimer = setInterval(() => {
       this.performSync();
     }, this.syncInterval);
 
@@ -381,6 +391,35 @@ class SyncService {
    */
   clearConflictHistory() {
     this.conflictResolutions = [];
+  }
+
+  /**
+   * Shutdown sync service - stop all background timers
+   *
+   * This method is critical for test cleanup to prevent:
+   * - Database queries after connection close
+   * - "Cannot log after tests are done" warnings
+   * - Test suite hangs
+   *
+   * Safe to call multiple times (idempotent).
+   */
+  async shutdown() {
+    // Clear background sync interval
+    if (this.backgroundTimer) {
+      clearInterval(this.backgroundTimer);
+      this.backgroundTimer = null;
+    }
+
+    // Clear initial sync timeout
+    if (this.initialTimer) {
+      clearTimeout(this.initialTimer);
+      this.initialTimer = null;
+    }
+
+    // Reset sync flag to prevent any ongoing operations
+    this.syncInProgress = false;
+
+    console.log('Sync service shutdown complete');
   }
 }
 
